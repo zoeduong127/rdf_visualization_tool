@@ -203,7 +203,7 @@ const App = () => {
   const [highlightNodes, setHighlightNodes] = useState(new Set());
   const [highlightLinks, setHighlightLinks] = useState(new Set());
   const [semanticLevel, setSemanticLevel] = useState(1);
-  const [nodeLimit, setNodeLimit] = useState(10);
+  const [nodeLimit, setNodeLimit] = useState(20);
 
   // --- Class Map ---
   const classMap = {};
@@ -237,6 +237,14 @@ const App = () => {
     });
     return violations;
   }
+
+  useEffect(() => {
+  const seenTour = localStorage.getItem("rdfTourSeen");
+  if (!seenTour) {
+    setJoyrideRun(true);
+    localStorage.setItem("rdfTourSeen", "yes");
+  }
+}, []);
 
   // --- D3 Graph Rendering ---
   useEffect(() => {
@@ -529,6 +537,23 @@ const App = () => {
           marginBottom: "10px",
           letterSpacing: "0.5px"
         }}>RDF Graph Controls</h2>
+        <button
+    data-joyride-id="walkthrough"
+    onClick={() => setJoyrideRun(true)}
+    style={{
+      marginBottom: "12px",
+      padding: "8px 16px",
+      borderRadius: "4px",
+      border: "1px solid #1976d2",
+      background: "#1976d2",
+      color: "#fff",
+      fontWeight: 600,
+      cursor: "pointer",
+      fontSize: "14px"
+    }}
+  >
+    Show Tour
+  </button>
         <hr style={{ margin: "0 0 10px 0", border: "none", borderTop: "1px solid #eee" }} />
 
         <section>
