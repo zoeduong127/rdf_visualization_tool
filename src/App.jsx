@@ -416,6 +416,10 @@ const App = () => {
           ? 0.1 : 1
       )
       .on("mouseover", (event, d) => {
+        d3.select(event.currentTarget)
+          .style("stroke", "black")
+          .style("stroke-width", 4);
+
         d3.select(tooltipRef.current)
           .style("left", `${event.pageX + 10}px`)
           .style("top", `${event.pageY + 10}px`)
@@ -424,9 +428,15 @@ const App = () => {
             `<strong>${typeIcons[d.type] || ""} ${d.id}</strong><br/>Type: ${d.type}<br/><em>${classExplanations[d.type] || ""}</em>`
           );
       })
-      .on("mouseout", () => {
-        d3.select(tooltipRef.current).style("display", "none");
+      .on("mouseout", (event, d) => {
+        d3.select(event.currentTarget)
+          .style("stroke", "#fff")
+          .style("stroke-width", 2);
+
+        d3.select(tooltipRef.current)
+          .style("display", "none");
       })
+
       .call(
         d3.drag()
           .on("start", (event, d) => {
