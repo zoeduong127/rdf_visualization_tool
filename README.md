@@ -1,6 +1,6 @@
-# React + Vite
+# rdf_visualization_tool
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project uses React + Vite to build an RDF visualization tool. It provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
 
