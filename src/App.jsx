@@ -240,7 +240,7 @@ const App = () => {
 
   // --- D3 Graph Rendering ---
   useEffect(() => {
-    const width = 1000;
+    const width = 1200;
     const height = 800;
     let filteredTriples = [...sampleTriples];
 
@@ -348,7 +348,7 @@ const App = () => {
     const g = svg.append("g");
 
     const simulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(semanticLevel === 1 ? 300 : 150))
+      .force("link", d3.forceLink(links).id(d => d.id).distance(semanticLevel === 1 ? 400 : 300))
       .force("charge", d3.forceManyBody().strength(-300))
       .force("center", d3.forceCenter(width / 2, height / 2));
 
@@ -372,7 +372,7 @@ const App = () => {
       .join("text")
       .attr("class", d => `edge-label edge-label-level-${d.level}`)
       .text(d => `${businessIcons[d.predicate] || ""} ${labelsMap[d.predicate] || d.predicate}`)
-      .style("font-size", "14px")
+      .style("font-size", "12px")
       .style("fill", d => predicateColors[d.predicate] || "#888")
       .style("pointer-events", "all")
       .attr("opacity", d =>
@@ -418,7 +418,24 @@ const App = () => {
       })
       .on("mouseout", () => {
         d3.select(tooltipRef.current).style("display", "none");
-      });
+      })
+      .call(
+        d3.drag()
+          .on("start", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on("drag", (event, d) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on("end", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+          })
+      );
 
     const label = g.append("g")
       .attr("class", "node-label-group")
@@ -429,7 +446,7 @@ const App = () => {
       .text(d => `${typeIcons[d.type] || ""} ${d.id}`)
       .attr("dy", 4)
       .attr("text-anchor", "middle")
-      .style("font-size", "16px")
+      .style("font-size", "13px")
       .attr("opacity", d =>
         (searchQuery && searchFadedNodes.has(d.id))
           ? 0.1 : 1
@@ -487,7 +504,7 @@ const App = () => {
         showSkipButton
         showProgress
         styles={{
-          options: { zIndex: 10000 }
+          options: { zIndex: 12000 }
         }}
         callback={data => {
           if (data.status === "finished" || data.status === "skipped") {
@@ -497,7 +514,7 @@ const App = () => {
       />
       
       <aside style={{
-        width: "20%", // Increased from 260px
+        width: "15%", // Increased from 260px
         minHeight: "100vh",
         background: "#fff",
         boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
@@ -687,7 +704,8 @@ const App = () => {
       </aside>
 
       <main style={{
-        marginLeft: "5%",
+        width: "5%", // Adjusted to fill the remaining space
+        marginLeft: "0%",
         flex: 1,
         display: "flex",
         flexDirection: "column",
@@ -698,7 +716,7 @@ const App = () => {
       }}>
         <div style={{
           position: "relative",
-          width: 1000,
+          width: 1200,
           height: 800,
           background: "#f0f4f8",
           borderRadius: "10px",
@@ -707,9 +725,9 @@ const App = () => {
         }}>
           <svg
             ref={svgRef}
-            width={1000}
+            width={1200}
             height={800}
-            viewBox="0 0 1000 800"
+            viewBox="0 0 1200 800"
             style={{ border: "none", borderRadius: "10px" }}
             data-joyride-id="graph-canvas"
           />
