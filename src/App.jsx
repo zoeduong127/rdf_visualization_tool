@@ -255,6 +255,7 @@ const App = () => {
     if (selectedModule !== "All") {
       const allowedPredicates = domainModules[selectedModule];
       filteredTriples = filteredTriples.filter(([s, p, o]) =>
+        p === "type" || // <- ensure type triples stay
         allowedPredicates.includes(p) ||
         allowedPredicates.includes(classMap[o]) ||
         allowedPredicates.includes(classMap[s])
