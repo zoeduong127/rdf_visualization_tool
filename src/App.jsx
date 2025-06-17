@@ -80,6 +80,8 @@ const predicateColors = {
   involves: "#7b1fa2"
 };
 
+// ...existing code...
+
 const tourSteps = [
   {
     title: "Welcome to the RDF Graph",
@@ -90,12 +92,24 @@ const tourSteps = [
     content: "Each circle is a node (e.g., a Person or Skill). Lines between them are edges representing RDF relationships like 'worksAt' or 'hasSkill'."
   },
   {
+    title: "Semantic Zoom",
+    content: "Use the semantic zoom controls to switch between a high-level class view and a detailed entity view. This helps you explore the graph at different abstraction levels."
+  },
+  {
     title: "Zoom and Pan",
     content: "Use your mouse scroll to zoom and drag to pan around the graph canvas."
   },
   {
     title: "Filter and Search",
     content: "Use filters on the left to limit what you see by class or domain. Search lets you highlight matching nodes."
+  },
+  {
+    title: "Node Display Limit",
+    content: "You can control the maximum number of nodes shown in the graph using the 'Node Display Limit' input. This helps keep the visualization clear and focused."
+  },
+  {
+    title: "Described Entity Highlight",
+    content: "Select a 'Described Entity' from the sidebar to highlight it in the graph. The selected entity will appear larger, in a unique color, and fixed in the center, making it easier to focus on its metadata."
   },
   {
     title: "Guided Tasks",
@@ -107,6 +121,8 @@ const tourSteps = [
   }
 ];
 
+//
+
 const joyrideSteps = [
   {
     target: '[data-joyride-id="walkthrough"]',
@@ -115,9 +131,19 @@ const joyrideSteps = [
     disableBeacon: true
   },
   {
+    target: '[data-joyride-id="semantic-zoom"]',
+    title: "Semantic Zoom",
+    content: "Switch between a high-level class view and a detailed entity view using these controls."
+  },
+  {
     target: '[data-joyride-id="domain-module"]',
     title: "Domain Module Filter",
     content: "Filter the graph by domain (Employment, Skills, etc)."
+  },
+  {
+    target: '[data-joyride-id="node-limit"]',
+    title: "Node Display Limit",
+    content: "Set the maximum number of nodes shown in the graph to keep the visualization clear."
   },
   {
     target: '[data-joyride-id="class-filter"]',
@@ -128,6 +154,11 @@ const joyrideSteps = [
     target: '[data-joyride-id="search-input"]',
     title: "Search",
     content: "Type here to search and highlight nodes by name."
+  },
+  {
+    target: '[data-joyride-id="described-entity"]',
+    title: "Described Entity Highlight",
+    content: "Select an entity to highlight it in the graph. The selected entity will appear larger, in a unique color, and fixed in the center."
   },
   {
     target: '[data-joyride-id="guided-tasks"]',
@@ -187,7 +218,8 @@ const guidedTasks = [
   }
 ];
 
-// --- Main Component ---
+const DESCRIBED_ENTITY_COLOR = "#e91e63";
+
 const App = () => {
   const svgRef = useRef();
   const tooltipRef = useRef();
@@ -204,6 +236,7 @@ const App = () => {
   const [highlightLinks, setHighlightLinks] = useState(new Set());
   const [semanticLevel, setSemanticLevel] = useState(1);
   const [nodeLimit, setNodeLimit] = useState(20);
+  const [describedEntity, setDescribedEntity] = useState(""); // NEW
 
   // --- Class Map ---
   const classMap = {};
@@ -239,12 +272,12 @@ const App = () => {
   }
 
   useEffect(() => {
-  const seenTour = localStorage.getItem("rdfTourSeen");
-  if (!seenTour) {
-    setJoyrideRun(true);
-    localStorage.setItem("rdfTourSeen", "yes");
-  }
-}, []);
+    const seenTour = localStorage.getItem("rdfTourSeen");
+    if (!seenTour) {
+      setJoyrideRun(true);
+      localStorage.setItem("rdfTourSeen", "yes");
+    }
+  }, []);
 
   // --- D3 Graph Rendering ---
   useEffect(() => {
@@ -255,7 +288,7 @@ const App = () => {
     if (selectedModule !== "All") {
       const allowedPredicates = domainModules[selectedModule];
       filteredTriples = filteredTriples.filter(([s, p, o]) =>
-        p === "type" || // <- ensure type triples stay
+        p === "type" ||
         allowedPredicates.includes(p) ||
         allowedPredicates.includes(classMap[o]) ||
         allowedPredicates.includes(classMap[s])
@@ -403,15 +436,18 @@ const App = () => {
         d3.select(tooltipRef.current).style("display", "none");
       });
 
+    // --- Highlight described entity ---
+    const describedNode = nodes.find(n => n.id === describedEntity);
+
     const node = g.append("g")
       .attr("class", "node-group")
       .selectAll("circle")
-      .data(nodes)
+      .data(nodes, d => d.id)
       .join("circle")
-      .attr("r", 30)
-      .attr("fill", d => color(d.type))
-      .style("stroke", "#fff")
-      .style("stroke-width", 2)
+      .attr("r", d => d.id === describedEntity ? 45 : 30)
+      .attr("fill", d => d.id === describedEntity ? DESCRIBED_ENTITY_COLOR : color(d.type))
+      .style("stroke", d => d.id === describedEntity ? "#c2185b" : "#fff")
+      .style("stroke-width", d => d.id === describedEntity ? 5 : 2)
       .attr("opacity", d =>
         (searchQuery && searchFadedNodes.has(d.id))
           ? 0.1 : 1
@@ -431,13 +467,12 @@ const App = () => {
       })
       .on("mouseout", (event, d) => {
         d3.select(event.currentTarget)
-          .style("stroke", "#fff")
-          .style("stroke-width", 2);
+          .style("stroke", d.id === describedEntity ? "#c2185b" : "#fff")
+          .style("stroke-width", d.id === describedEntity ? 5 : 2);
 
         d3.select(tooltipRef.current)
           .style("display", "none");
       })
-
       .call(
         d3.drag()
           .on("start", (event, d) => {
@@ -451,10 +486,20 @@ const App = () => {
           })
           .on("end", (event, d) => {
             if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
+            if (d.id === describedEntity) {
+              d.fx = width / 2;
+              d.fy = height / 2;
+            } else {
+              d.fx = null;
+              d.fy = null;
+            }
           })
       );
+
+    // Draw described node on top
+    if (describedNode) {
+      node.filter(d => d.id === describedEntity).raise();
+    }
 
     const label = g.append("g")
       .attr("class", "node-label-group")
@@ -463,13 +508,14 @@ const App = () => {
       .join("text")
       .attr("class", "node-label")
       .text(d => `${typeIcons[d.type] || ""} ${d.id}`)
-      .attr("dy", 4)
+      .attr("dy", d => d.id === describedEntity ? 7 : 4) // Slightly lower for big node
       .attr("text-anchor", "middle")
-      .style("font-size", "13px")
+      .style("font-size", d => d.id === describedEntity ? "20px" : "13px")
       .attr("opacity", d =>
         (searchQuery && searchFadedNodes.has(d.id))
           ? 0.1 : 1
-      );
+      )
+      .style("font-weight", d => d.id === describedEntity ? 700 : 400)
 
     simulation.on("tick", () => {
       link.attr("x1", d => d.source.x)
@@ -489,6 +535,12 @@ const App = () => {
           const angle = Math.atan2(dy, dx) * 180 / Math.PI;
           return `rotate(${angle}, ${(d.source.x + d.target.x) / 2}, ${(d.source.y + d.target.y) / 2})`;
         });
+
+      // Fix described entity in center
+      if (describedNode) {
+        describedNode.x = width / 2;
+        describedNode.y = height / 2;
+      }
     });
 
   }, [
@@ -500,7 +552,8 @@ const App = () => {
     highlightNodes,
     highlightLinks,
     semanticLevel,
-    nodeLimit
+    nodeLimit,
+    describedEntity
   ]);
 
   // --- Semantic Zoom Controls ---
@@ -533,41 +586,44 @@ const App = () => {
       />
       
       <aside style={{
-        width: "15%", // Increased from 260px
+        width: "15%",
         minHeight: "100vh",
         background: "#fff",
         boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
         padding: "24px 18px 18px 18px",
         display: "flex",
         flexDirection: "column",
-        gap: "18px"
+        gap: "18px",
+        overflowY: "auto",
+        position: "relative"
       }}>
         <h2 style={{
           fontSize: "1.3rem",
           fontWeight: 700,
-          marginBottom: "10px",
+          marginBottom: "5px",
           letterSpacing: "0.5px"
         }}>RDF Graph Controls</h2>
         <button
-    data-joyride-id="walkthrough"
-    onClick={() => setJoyrideRun(true)}
-    style={{
-      marginBottom: "12px",
-      padding: "8px 16px",
-      borderRadius: "4px",
-      border: "1px solid #1976d2",
-      background: "#1976d2",
-      color: "#fff",
-      fontWeight: 600,
-      cursor: "pointer",
-      fontSize: "14px"
-    }}
-  >
-    Show Tour
-  </button>
-        <hr style={{ margin: "0 0 10px 0", border: "none", borderTop: "1px solid #eee" }} />
+        
+          data-joyride-id="walkthrough"
+          onClick={() => setJoyrideRun(true)}
+          style={{
+            marginBottom: "12px",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            border: "1px solid #1976d2",
+            background: "#1976d2",
+            color: "#fff",
+            fontWeight: 600,
+            cursor: "pointer",
+            fontSize: "14px"
+          }}
+        >
+          Show Tour
+        </button>
+        <hr style={{ margin: "0 0 0 0", border: "none", borderTop: "1px solid #eee" }} />
 
-        <section>
+        <section data-joyride-id="semantic-zoom">
           <h4 style={{ marginBottom: 6 }}>Semantic Zoom</h4>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -604,10 +660,9 @@ const App = () => {
           </div>
         </section>
 
-        <section>
-          <h4 style={{ marginBottom: 6 }}>Domain Module</h4>
+        <section data-joyride-id="domain-module">
+          <h4 style={{ marginBottom: 0 }}>Domain Module</h4>
           <select
-            data-joyride-id="domain-module"
             value={selectedModule}
             onChange={(e) => setSelectedModule(e.target.value)}
             style={{
@@ -624,8 +679,8 @@ const App = () => {
           </select>
         </section>
 
-        <section>
-          <h4 style={{ marginBottom: 6 }}>Node Display Limit</h4>
+        <section data-joyride-id="node-limit">
+          <h4 style={{ marginBottom: 0 }}>Node Display Limit</h4>
           <input
             type="number"
             value={nodeLimit}
@@ -639,10 +694,9 @@ const App = () => {
           />
         </section>
 
-        <section>
-          <h4 style={{ marginBottom: 6 }}>Filter by Class</h4>
+        <section data-joyride-id="class-filter">
+          <h4 style={{ marginBottom: 0 }}>Filter by Class</h4>
           <select
-            data-joyride-id="class-filter"
             onChange={e => {
               setClassFilter(e.target.value);
               setObjectFilter("All");
@@ -678,10 +732,9 @@ const App = () => {
           )}
         </section>
 
-        <section>
-          <h4 style={{ marginBottom: 6 }}>Search Node</h4>
+        <section data-joyride-id="search-input">
+          <h4 style={{ marginBottom: 0 }}>Search Node</h4>
           <input
-            data-joyride-id="search-input"
             type="text"
             placeholder="Search..."
             value={searchQuery}
@@ -695,9 +748,34 @@ const App = () => {
           />
         </section>
 
-        <section>
-          <h4 style={{ marginBottom: 6 }}>Guided Tasks</h4>
-          <div data-joyride-id="guided-tasks" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+        <section data-joyride-id="described-entity">
+          <h4 style={{ marginBottom: 0 }}>Described Entity</h4>
+          <select
+            value={describedEntity}
+            onChange={e => setDescribedEntity(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "6px",
+              borderRadius: "4px",
+              border: "1px solid #bbb",
+              marginBottom: "10px"
+            }}
+          >
+            <option value="">(None)</option>
+            {Array.from(new Set(sampleTriples.flatMap(([s, , o]) => [s, o])))
+              .sort()
+              .map(id => (
+                <option key={id} value={id}>{id}</option>
+              ))}
+          </select>
+          <div style={{ fontSize: 12, color: DESCRIBED_ENTITY_COLOR }}>
+            {describedEntity && `Highlighting: ${describedEntity}`}
+          </div>
+        </section>
+
+        <section data-joyride-id="guided-tasks">
+          <h4 style={{ marginBottom: 0 }}>Guided Tasks</h4>
+          <div  style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {guidedTasks.map(task => (
               <button
                 key={task.label}
@@ -740,7 +818,7 @@ const App = () => {
       </aside>
 
       <main style={{
-        width: "5%", // Adjusted to fill the remaining space
+        width: "5%",
         marginLeft: "0%",
         flex: 1,
         display: "flex",
