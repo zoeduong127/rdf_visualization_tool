@@ -588,10 +588,9 @@ const App = () => {
       />
       
       <aside style={{
-        background: "lightblue",
         width: "15%",
         minHeight: "100vh",
-        background: "#fff",
+        background: "lightblue",
         boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
         padding: "24px 18px 18px 18px",
         display: "flex",
