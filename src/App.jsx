@@ -422,16 +422,17 @@ const App = () => {
           ? 0.1 : 1
       )
       .on("mouseover", function (event, d) {
-        d3.select(tooltipRef.current)
-          .style("left", `${event.pageX}px`)
-          .style("top", `${event.pageY}px`)
-          .style("display", "block")
-          .html(
-            `<strong style="font-size:1.2em">${businessIcons[d.predicate] || ""} ${labelsMap[d.predicate] || d.predicate}</strong><br/>
-            <span style="color:${predicateColors[d.predicate] || "#333"}">${predicateExplanations[d.predicate] || ""}</span>
-            ${predicateConstraints[d.predicate] ? `<br/><b>Constraint:</b> ${predicateConstraints[d.predicate].label}` : ""}`
-          );
-      })
+  const svgRect = svgRef.current.getBoundingClientRect();
+  d3.select(tooltipRef.current)
+    .style("left", `${event.clientX - svgRect.left + 10}px`)
+    .style("top", `${event.clientY - svgRect.top + 10}px`)
+    .style("display", "block")
+    .html(
+      `<strong style="font-size:1.2em">${businessIcons[d.predicate] || ""} ${labelsMap[d.predicate] || d.predicate}</strong><br/>
+      <span style="color:${predicateColors[d.predicate] || "#333"}">${predicateExplanations[d.predicate] || ""}</span>
+      ${predicateConstraints[d.predicate] ? `<br/><b>Constraint:</b> ${predicateConstraints[d.predicate].label}` : ""}`
+    );
+})
       .on("mouseout", () => {
         d3.select(tooltipRef.current).style("display", "none");
       });
