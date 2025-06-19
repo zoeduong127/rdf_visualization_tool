@@ -423,8 +423,8 @@ const App = () => {
       )
       .on("mouseover", function (event, d) {
         d3.select(tooltipRef.current)
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`)
+          .style("left", `${event.pageX}px`)
+          .style("top", `${event.pageY}px`)
           .style("display", "block")
           .html(
             `<strong style="font-size:1.2em">${businessIcons[d.predicate] || ""} ${labelsMap[d.predicate] || d.predicate}</strong><br/>
@@ -453,18 +453,19 @@ const App = () => {
           ? 0.1 : 1
       )
       .on("mouseover", (event, d) => {
-        d3.select(event.currentTarget)
-          .style("stroke", "black")
-          .style("stroke-width", 4);
+  d3.select(event.currentTarget)
+    .style("stroke", "black")
+    .style("stroke-width", 4);
 
-        d3.select(tooltipRef.current)
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`)
-          .style("display", "block")
-          .html(
-            `<strong>${typeIcons[d.type] || ""} ${d.id}</strong><br/>Type: ${d.type}<br/><em>${classExplanations[d.type] || ""}</em>`
-          );
-      })
+  const svgRect = svgRef.current.getBoundingClientRect();
+  d3.select(tooltipRef.current)
+    .style("left", `${event.clientX - svgRect.left + 10}px`)
+    .style("top", `${event.clientY - svgRect.top + 10}px`)
+    .style("display", "block")
+    .html(
+      `<strong>${typeIcons[d.type] || ""} ${d.id}</strong><br/>Type: ${d.type}<br/><em>${classExplanations[d.type] || ""}</em>`
+    );
+})
       .on("mouseout", (event, d) => {
         d3.select(event.currentTarget)
           .style("stroke", d.id === describedEntity ? "#c2185b" : "#fff")
