@@ -588,6 +588,7 @@ const App = () => {
       />
       
       <aside style={{
+        background: "lightblue",
         width: "15%",
         minHeight: "100vh",
         background: "#fff",
@@ -600,6 +601,7 @@ const App = () => {
         position: "relative"
       }}>
         <h2 style={{
+          textAlign: "center",
           fontSize: "1.3rem",
           fontWeight: 700,
           marginBottom: "5px",
@@ -623,7 +625,7 @@ const App = () => {
         >
           Show Tour
         </button>
-        <hr style={{ margin: "0 0 0 0", border: "none", borderTop: "1px solid #eee" }} />
+        <hr style={{margin: "0 0 0 0", border: "none", borderTop: "1px solid #eee" }} />
 
         <section data-joyride-id="semantic-zoom">
           <h4 style={{ marginBottom: 6 }}>Semantic Zoom</h4>
